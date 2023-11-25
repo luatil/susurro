@@ -1,0 +1,7 @@
+llvmlite
+librosa
+imgui[pygame]
+pyaudio
+faster-whisper
+numpy
+
