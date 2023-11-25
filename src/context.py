@@ -2,6 +2,7 @@ import threading
 import numpy as np
 import pyaudio
 
+
 class Context:
     def __init__(self, sr=48000, buffer_duration=3.0, chunk_size=1024) -> None:
         self.sr = sr
@@ -10,12 +11,12 @@ class Context:
         self.chunk_size = chunk_size
         self.file_mutex = threading.Lock()
         self.is_recording = False
-        self.audio_buffer = np.zeros(int(sr* buffer_duration), dtype=np.float32)
+        self.audio_buffer = np.zeros(int(sr * buffer_duration), dtype=np.float32)
         self.global_segments = []
         self.transcription_buffer = None
 
         self.all_segments = []
-        self.current_segments = None 
+        self.current_segments = None
         self.all_info = []
         self.current_info = None
 

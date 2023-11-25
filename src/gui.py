@@ -8,6 +8,7 @@ from recorder import Recorder
 from transcriber import Transcriber
 import OpenGL.GL as gl
 
+
 class GUI:
     def __init__(self, ctx: Context, w=800, h=600) -> None:
         self.w = w
@@ -18,7 +19,9 @@ class GUI:
         pygame.init()
         size = self.w, self.h
 
-        pygame.display.set_mode(size, pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
+        pygame.display.set_mode(
+            size, pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE
+        )
 
         imgui.create_context()
         self.impl = PygameRenderer()
@@ -39,7 +42,6 @@ class GUI:
         self.transcription_window = TranscriptionWindow(ctx)
 
     def render(self) -> None:
-
         while 1:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -70,7 +72,7 @@ class GUI:
 
             pygame.display.flip()
 
-        
+
 class MenuBar:
     def __init__(self, ctx: Context) -> None:
         self.ctx = ctx
@@ -78,7 +80,6 @@ class MenuBar:
     def render(self) -> None:
         if imgui.begin_main_menu_bar():
             if imgui.begin_menu("File", True):
-
                 clicked_quit, selected_quit = imgui.menu_item(
                     "Quit", "Cmd+Q", False, True
                 )
@@ -91,7 +92,9 @@ class MenuBar:
 
 
 class SinePlot:
-    def __init__(self, ctx: Context, yscale=5000.0, min_yscale=1000.0, max_yscale=10000.0) -> None:
+    def __init__(
+        self, ctx: Context, yscale=5000.0, min_yscale=1000.0, max_yscale=10000.0
+    ) -> None:
         self.ctx = ctx
         self.yscale = yscale
         self.min_yscale = min_yscale
@@ -99,9 +102,18 @@ class SinePlot:
 
     def render(self) -> None:
         imgui.begin("Sine Wave", True)
-        changed, self.yscale = imgui.slider_float("Y Scale", self.yscale, self.min_yscale, self.max_yscale)
-        imgui.plot_lines("Sine", self.ctx.audio_buffer, scale_min=-self.yscale, scale_max=+self.yscale, graph_size=(0, 200))
+        changed, self.yscale = imgui.slider_float(
+            "Y Scale", self.yscale, self.min_yscale, self.max_yscale
+        )
+        imgui.plot_lines(
+            "Sine",
+            self.ctx.audio_buffer,
+            scale_min=-self.yscale,
+            scale_max=+self.yscale,
+            graph_size=(0, 200),
+        )
         imgui.end()
+
 
 class AudioRecorderWindow:
     def __init__(self, ctx: Context) -> None:
@@ -120,12 +132,17 @@ class AudioRecorderWindow:
 
         if imgui.button("Stop"):
             self.ctx.is_recording = False
-            threading.Thread(target=self.transcriber.transcribe_segments, daemon=True).start()
+            threading.Thread(
+                target=self.transcriber.transcribe_segments, daemon=True
+            ).start()
 
         if imgui.button("Save"):
-            threading.Thread(target=self.recorder.save_audio('output.wav'), daemon=True).start()
+            threading.Thread(
+                target=self.recorder.save_audio("output.wav"), daemon=True
+            ).start()
 
         imgui.end()
+
 
 class TranscriptionWindow:
     def __init__(self, ctx: Context) -> None:
