@@ -119,7 +119,6 @@ class AudioRecorderWindow:
     def __init__(self, ctx: Context) -> None:
         self.ctx = ctx
         self.recorder = Recorder(ctx)
-        self.transcriber = Transcriber(ctx)
 
     def render(self) -> None:
         imgui.begin("Audio Recorder", True)
@@ -132,21 +131,22 @@ class AudioRecorderWindow:
 
         if imgui.button("Stop"):
             self.ctx.is_recording = False
-            threading.Thread(
-                target=self.transcriber.transcribe_segments, daemon=True
-            ).start()
 
         if imgui.button("Save"):
-            threading.Thread(
-                target=self.recorder.save_audio("output.wav"), daemon=True
-            ).start()
-
+            if not self.ctx.is_recording:
+                threading.Thread(
+                    target=self.recorder.save_audio("output.wav"), daemon=True
+                ).start()
         imgui.end()
 
 
 class TranscriptionWindow:
     def __init__(self, ctx: Context) -> None:
         self.ctx = ctx
+        self.transcriber = Transcriber(ctx, model_size=self.ctx.model_size)
+        threading.Thread(
+            target=self.transcriber.transcribe_segments, daemon=True
+        ).start()
 
     def render(self) -> None:
         imgui.begin("Transcription", True)

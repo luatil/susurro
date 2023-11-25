@@ -13,16 +13,22 @@ class Transcriber:
         Transcribe audio buffer and return segments and info
         Requires that audio buffer is a numpy array of floats with a sample rate of 16000
         """
-        with self.ctx.file_mutex:
-            segments, info = self.model.transcribe(
-                self.ctx.transcription_buffer, beam_size=beam_size
-            )
+        while True:
+            item = self.ctx.transcription_queue.get(block=True)
+            if item is None:
+                continue
+            else:
+                segs, info = self.model.transcribe(item, beam_size=beam_size)
 
-        print(
-            "Detected language '%s' with probability %f"
-            % (info.language, info.language_probability)
-        )
+                print(
+                    "Detected language '%s' with probability %f"
+                    % (info.language, info.language_probability)
+                )
 
-        for segment in segments:
-            print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
-            self.ctx.all_segments.append(segment.text)
+                if info.language_probability > 0.85:
+                    for segment in segs:
+                        print(
+                            "[%.2fs -> %.2fs] %s"
+                            % (segment.start, segment.end, segment.text)
+                        )
+                        self.ctx.all_segments.append(segment.text)

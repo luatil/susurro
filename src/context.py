@@ -1,6 +1,7 @@
 import threading
 import numpy as np
 import pyaudio
+from queue import Queue
 
 
 class Context:
@@ -21,3 +22,8 @@ class Context:
         self.current_info = None
 
         self.audio_recording_format = pyaudio.paInt16
+
+        self.transcription_length = 10.0 * sr
+        self.transcription_queue = Queue()
+
+        self.model_size = "small"
