@@ -4,4 +4,4 @@ imgui[pygame]
 pyaudio
 faster-whisper
 numpy
-
+transformers[torch]>=4.23

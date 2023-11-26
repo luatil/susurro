@@ -93,7 +93,7 @@ class MenuBar:
 
 class SinePlot:
     def __init__(
-        self, ctx: Context, yscale=5000.0, min_yscale=1000.0, max_yscale=10000.0
+        self, ctx: Context, yscale=20000.0, min_yscale=0.0, max_yscale=32768.0
     ) -> None:
         self.ctx = ctx
         self.yscale = yscale
