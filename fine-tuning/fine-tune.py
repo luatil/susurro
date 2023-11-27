@@ -65,17 +65,18 @@ class WhisperFineTuning:
         self.language = language
         self.model_name = model_name
         self.dataset_name = dataset_name
-        self.cpu_count = os.cpu_count() / 2
+        # NOTE: Only reliable amount for preparing dataset. Depending on the configuration, you may increase this number.
+        self.cpu_count = 1
 
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
         self.tokenizer = WhisperTokenizer.from_pretrained(
             model_name, language=language, task="transcribe"
         )
-        self.model = WhisperForConditionalGeneration(model_name)
+        self.model = WhisperForConditionalGeneration.from_pretrained(model_name)
         self.model.config.forced_decoder_ids = None
         self.model.config.suppress_tokens = []
 
-        self.metric = evaluate.load_metric("wer")
+        self.metric = evaluate.load("wer")
 
         self.common_voice = None
 
@@ -163,7 +164,7 @@ class WhisperFineTuning:
         )
         data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=processor)
         training_args = Seq2SeqTrainingArguments(
-            repo_name=repo_name,
+            output_dir=repo_name,
             per_device_train_batch_size=batch_size,
             gradient_accumulation_steps=1,  # increase by 2x for every 2x decrease in batch size
             learning_rate=lr,
@@ -212,6 +213,7 @@ class WhisperFineTuning:
 
         return {"wer": wer}
 
+
 def main():
     # Create the parser
     parser = argparse.ArgumentParser(
@@ -257,6 +259,72 @@ def main():
     parser.add_argument(
         "--batch_size", type=int, default=32, help="Batch size for training"
     )
+    parser.add_argument("--lr", type=float, default=1e-5, help="Learning rate")
+    parser.add_argument(
+        "--warmup_steps", type=int, default=500, help="Warmup steps for training"
+    )
+    parser.add_argument(
+        "--max_steps", type=int, default=4000, help="Max steps for training"
+    )
+    parser.add_argument(
+        "--gradient_checkpointing",
+        action="store_true",
+        help="Use gradient checkpointing",
+        default=True,
+    )
+    parser.add_argument("--fp16", action="store_true", help="Use fp16")
+    parser.add_argument(
+        "--evaluation_strategy",
+        type=str,
+        default="steps",
+        help="Evaluation strategy for training",
+    )
+    parser.add_argument(
+        "--per_device_eval_batch_size",
+        type=int,
+        default=8,
+        help="Batch size for evaluation",
+    )
+    parser.add_argument(
+        "--predict_with_generate",
+        action="store_true",
+        help="Predict with generate",
+        default=True,
+    )
+    parser.add_argument(
+        "--generation_max_length",
+        type=int,
+        default=225,
+        help="Max length for generation",
+    )
+    parser.add_argument(
+        "--save_steps", type=int, default=1000, help="Save steps for training"
+    )
+    parser.add_argument(
+        "--eval_steps", type=int, default=1000, help="Eval steps for training"
+    )
+    parser.add_argument(
+        "--logging_steps", type=int, default=25, help="Logging steps for training"
+    )
+    parser.add_argument(
+        "--load_best_model_at_end",
+        action="store_true",
+        help="Load best model at end of training",
+        default=True,
+    )
+    parser.add_argument(
+        "--greater_is_better",
+        action="store_true",
+        default=False,
+        help="Greater is better for metric",
+    )
+    parser.add_argument(
+        "--push_to_hub",
+        action="store_true",
+        default=True,
+        help="Push to hub after training",
+    )
+
     # ... add other training arguments here ...
 
     # Parse the arguments
