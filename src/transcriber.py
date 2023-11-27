@@ -5,7 +5,9 @@ from context import Context
 
 class Transcriber:
     def __init__(self, ctx: Context, model_size="small") -> None:
-        self.model = WhisperModel(model_size, device="cpu", compute_type="float32")
+        self.model = WhisperModel(
+            "models/whisper-small-pt-cv11-v7", device="cpu", compute_type="float32"
+        )
         self.ctx = ctx
 
     def transcribe_segments(self, beam_size=5) -> None:
@@ -31,4 +33,25 @@ class Transcriber:
                             "[%.2fs -> %.2fs] %s"
                             % (segment.start, segment.end, segment.text)
                         )
-                        self.ctx.all_segments.append(segment.text)
+                        new_seg = Segment(
+                            info.language,
+                            info.language_probability,
+                            segment.start,
+                            segment.end,
+                            segment.text,
+                        )
+                        self.ctx.all_segments.append(new_seg)
+
+
+class Segment:
+    def __init__(
+        self, language: str, language_prob: float, start: float, end: float, text: str
+    ) -> None:
+        self.language = language
+        self.language_prob = language_prob
+        self.start = start
+        self.end = end
+        self.text = text
+
+    def __repr__(self) -> str:
+        return f"({self.language}, {self.language_prob:.2f}) | [{self.start:.2f}s -> {self.end:.2f}s]: {self.text.strip()}"

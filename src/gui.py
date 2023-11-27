@@ -33,13 +33,13 @@ class GUI:
         self.menu = MenuBar(ctx)
 
         # Sine plot
-        self.sine_plot = SinePlot(ctx)
+        self.sine_plot = RealTime(ctx)
 
         # Recorder
-        self.recorder = AudioRecorderWindow(ctx)
+        # self.recorder = AudioRecorderWindow(ctx)
 
         # Transcription Window
-        self.transcription_window = TranscriptionWindow(ctx)
+        # self.transcription_window = TranscriptionWindow(ctx)
 
     def render(self) -> None:
         while 1:
@@ -57,11 +57,8 @@ class GUI:
             # Render Sine plot
             self.sine_plot.render()
 
-            # Render recorder
-            self.recorder.render()
-
             # Render transcription window
-            self.transcription_window.render()
+            # self.transcription_window.render()
 
             # note: cannot use screen.fill((1, 1, 1)) because pygame's screen
             #       does not support fill() on OpenGL sufraces
@@ -91,7 +88,7 @@ class MenuBar:
             imgui.end_main_menu_bar()
 
 
-class SinePlot:
+class RealTime:
     def __init__(
         self, ctx: Context, yscale=20000.0, min_yscale=0.0, max_yscale=32768.0
     ) -> None:
@@ -99,9 +96,42 @@ class SinePlot:
         self.yscale = yscale
         self.min_yscale = min_yscale
         self.max_yscale = max_yscale
+        self.recorder = Recorder(ctx)
+        self.save_file_name = "output.wav"
+        self.transcriber = Transcriber(ctx, model_size=self.ctx.model_size)
+        threading.Thread(
+            target=self.transcriber.transcribe_segments, daemon=True
+        ).start()
+
 
     def render(self) -> None:
-        imgui.begin("Sine Wave", True)
+        imgui.begin("Recorder", True)
+        
+        # Audio recording
+        if imgui.button("Record"):
+            if not self.ctx.is_recording:
+                self.ctx.is_recording = True
+                threading.Thread(target=self.recorder.record_audio, daemon=True).start()
+
+        imgui.same_line()
+
+        if imgui.button("Stop"):
+            self.ctx.is_recording = False
+
+        changed, self.save_file_name = imgui.input_text(
+            "Save File Name", self.save_file_name
+        )
+
+        if imgui.button("Save"):
+            if not self.ctx.is_recording:
+                threading.Thread(
+                    target=self.recorder.save_audio(self.save_file_name), daemon=True
+                ).start()
+
+        imgui.separator()
+
+        # Sine Plot
+        imgui.text("Sine Plot")
         changed, self.yscale = imgui.slider_float(
             "Y Scale", self.yscale, self.min_yscale, self.max_yscale
         )
@@ -112,6 +142,14 @@ class SinePlot:
             scale_max=+self.yscale,
             graph_size=(0, 200),
         )
+
+        imgui.separator()
+
+        # Trancription
+        imgui.text("Transcription")
+        for segment in self.ctx.all_segments:
+            imgui.bullet_text(str(segment))
+
         imgui.end()
 
 
