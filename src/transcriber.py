@@ -1,6 +1,7 @@
 from faster_whisper import WhisperModel
 import numpy as np
 from context import Context
+import threading
 
 
 class Transcriber:
@@ -77,3 +78,55 @@ class Segment:
 
     def __repr__(self) -> str:
         return f"({self.language}, {self.language_prob:.2f}) | [{self.start:4.2f}s -> {self.end:4.2f}s]: {self.text.strip()}"
+
+
+class FileTranscriber:
+    def __init__(
+        self,
+        model_size="small",
+        input_filename="output.wav",
+        output_filename="output.txt",
+    ) -> None:
+        self.model_size = model_size
+        self.input_filename = input_filename
+        self.output_filename = output_filename
+        self.model = WhisperModel(model_size, device="cpu", compute_type="float32")
+        self.segments: list[Segment] = []
+        self.transcribing = False
+        self.model_lock = threading.Lock()
+
+    def change_input_filename(self, input_filename: str) -> None:
+        self.input_filename = input_filename
+
+    def change_output_filename(self, output_filename: str) -> None:
+        self.output_filename = output_filename
+
+    def transcribe_file(self, bean_size=5) -> None:
+        self.transcribing = True
+        with self.model_lock:
+            segs, info = self.model.transcribe(self.input_filename, beam_size=bean_size)
+        self.transcribing = False
+
+        for segment in segs:
+            new_seg = Segment(
+                info.language,
+                info.language_probability,
+                segment.start,
+                segment.end,
+                segment.text,
+            )
+            self.segments.append(new_seg)
+
+    def save_transcription(self) -> None:
+        with open(self.output_filename, "w") as f:
+            for segment in self.segments:
+                f.write(str(segment) + "\n")
+    
+    def change_model(self, model_name: str) -> None:
+        with self.model_lock:
+            self.model = WhisperModel(
+                model_name,
+                device="cpu",
+                compute_type="float32",
+            )
+        print(f"Loaded model {model_name}")

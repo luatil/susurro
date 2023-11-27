@@ -5,7 +5,7 @@ from context import Context
 import sys
 import threading
 from recorder import Recorder
-from transcriber import Transcriber
+from transcriber import Transcriber, FileTranscriber
 import OpenGL.GL as gl
 
 
@@ -32,14 +32,11 @@ class GUI:
         # Menu bar
         self.menu = MenuBar(ctx)
 
-        # Sine plot
-        self.sine_plot = RealTime(ctx)
+        # Real time
+        self.real_time = RealTime(ctx)
 
-        # Recorder
-        # self.recorder = AudioRecorderWindow(ctx)
-
-        # Transcription Window
-        # self.transcription_window = TranscriptionWindow(ctx)
+        # From file
+        self.from_file = FromFileWindow()
 
     def render(self) -> None:
         while 1:
@@ -55,10 +52,10 @@ class GUI:
             self.menu.render()
 
             # Render Sine plot
-            self.sine_plot.render()
+            self.real_time.render()
 
             # Render transcription window
-            # self.transcription_window.render()
+            self.from_file.render()
 
             # note: cannot use screen.fill((1, 1, 1)) because pygame's screen
             #       does not support fill() on OpenGL sufraces
@@ -109,7 +106,7 @@ class RealTime:
 
     def render(self) -> None:
         imgui.begin("Recorder", True)
-        
+
         # Audio recording
         if imgui.button("Record"):
             if not self.ctx.is_recording:
@@ -159,13 +156,12 @@ class RealTime:
         with imgui.begin_combo("Model", items[self.selected_model_index]) as combo:
             if combo.opened:
                 for i, item in enumerate(items):
-                    is_selected = (i == self.selected_model_index)
+                    is_selected = i == self.selected_model_index
                     if imgui.selectable(item, is_selected)[0]:
                         self.selected_model_index = i
                         self.change_transcriber(item)
                     if is_selected:
                         imgui.set_item_default_focus()
-
 
         changed, self.transcription_file_name = imgui.input_text(
             "Transcription File Name", self.transcription_file_name
@@ -221,4 +217,67 @@ class TranscriptionWindow:
         imgui.begin("Transcription", True)
         for segment in self.ctx.all_segments:
             imgui.text(segment)
+        imgui.end()
+
+
+class FromFileWindow:
+    def __init__(
+        self,
+        model_size: str = "small",
+        input_filename: str = "output.wav",
+        output_filename: str = "output.txt",
+    ) -> None:
+        self.input_filename = input_filename
+        self.output_filename = output_filename
+        self.model_size = model_size
+        self.transcriber = FileTranscriber(
+            self.model_size, self.input_filename, self.output_filename
+        )
+        self.selected_model_index = 2
+
+    def render(self) -> None:
+        imgui.begin("From File", True)
+
+        changed, self.input_filename = imgui.input_text(
+            "Input File Name", self.input_filename
+        )
+        if changed:
+            self.transcriber.change_input_filename(self.input_filename)
+
+        changed, self.output_filename = imgui.input_text(
+            "Output File Name", self.output_filename
+        )
+        if changed:
+            self.transcriber.change_output_filename(self.output_filename)
+
+        # Select model box
+        items = ["models/whisper-small-pt-cv11-v7", "base", "small"]
+        with imgui.begin_combo("Model", items[self.selected_model_index]) as combo:
+            if combo.opened:
+                for i, item in enumerate(items):
+                    is_selected = i == self.selected_model_index
+                    if imgui.selectable(item, is_selected)[0]:
+                        self.selected_model_index = i
+                        threading.Thread(
+                            target=self.transcriber.change_model(item), daemon=True
+                        ).start()
+                    if is_selected:
+                        imgui.set_item_default_focus()
+
+        if imgui.button("Transcribe") and not self.transcriber.transcribing:
+            threading.Thread(
+                target=self.transcriber.transcribe_file, daemon=True
+            ).start()
+
+        imgui.same_line()
+
+        if imgui.button("Save"):
+            self.transcriber.save_transcription()
+
+        if  self.transcriber.transcribing:
+            imgui.text("Transcribing...")
+
+        for segment in self.transcriber.segments:
+            imgui.bullet_text(str(segment))
+
         imgui.end()
