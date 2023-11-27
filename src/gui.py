@@ -98,11 +98,14 @@ class RealTime:
         self.max_yscale = max_yscale
         self.recorder = Recorder(ctx)
         self.save_file_name = "output.wav"
+        self.transcription_file_name = "output.txt"
         self.transcriber = Transcriber(ctx, model_size=self.ctx.model_size)
-        threading.Thread(
-            target=self.transcriber.transcribe_segments, daemon=True
-        ).start()
+        self.selected_model_index = 0
 
+    def change_transcriber(self, transcriber_model: str) -> None:
+        self.ctx.transcriber_lock.acquire()
+        self.transcriber.replace_model(transcriber_model)
+        self.ctx.transcriber_lock.release()
 
     def render(self) -> None:
         imgui.begin("Recorder", True)
@@ -112,6 +115,9 @@ class RealTime:
             if not self.ctx.is_recording:
                 self.ctx.is_recording = True
                 threading.Thread(target=self.recorder.record_audio, daemon=True).start()
+                threading.Thread(
+                    target=self.transcriber.transcribe_segments, daemon=True
+                ).start()
 
         imgui.same_line()
 
@@ -147,6 +153,31 @@ class RealTime:
 
         # Trancription
         imgui.text("Transcription")
+
+        # Select model box
+        items = ["models/whisper-small-pt-cv11-v7", "base", "small"]
+        with imgui.begin_combo("Model", items[self.selected_model_index]) as combo:
+            if combo.opened:
+                for i, item in enumerate(items):
+                    is_selected = (i == self.selected_model_index)
+                    if imgui.selectable(item, is_selected)[0]:
+                        self.selected_model_index = i
+                        self.change_transcriber(item)
+                    if is_selected:
+                        imgui.set_item_default_focus()
+
+
+        changed, self.transcription_file_name = imgui.input_text(
+            "Transcription File Name", self.transcription_file_name
+        )
+        if imgui.button("Save transcription"):
+            with open(self.transcription_file_name, "w") as f:
+                for segment in self.ctx.all_segments:
+                    f.write(str(segment) + "\n")
+
+        if self.transcriber.is_transcribing:
+            imgui.text("Transcribing...")
+
         for segment in self.ctx.all_segments:
             imgui.bullet_text(str(segment))
 

@@ -5,7 +5,7 @@ from queue import Queue
 
 
 class Context:
-    def __init__(self, sr=48000, buffer_duration=3.0, chunk_size=1024) -> None:
+    def __init__(self, sr=48000, buffer_duration=3.0, chunk_size=1024, transcribe_buffer_duration=10.0) -> None:
         self.sr = sr
         self.buffer_duration = buffer_duration
         self.channels = 1
@@ -23,7 +23,10 @@ class Context:
 
         self.audio_recording_format = pyaudio.paInt16
 
-        self.transcription_length = 10.0 * sr
+        self.transcription_buffer_duration = transcribe_buffer_duration
+        self.transcription_length = self.transcription_buffer_duration * sr
         self.transcription_queue = Queue()
+
+        self.transcriber_lock = threading.Lock()
 
         self.model_size = "small"

@@ -36,7 +36,7 @@ class Recorder:
                 temp_frames.append(data)
                 read_length += len(data)
 
-                if read_length > self.ctx.transcription_length:
+                if read_length > (self.ctx.transcription_length * 2):
                     buf = (
                         np.frombuffer(b"".join(temp_frames), dtype=np.int16).astype(
                             np.float32
