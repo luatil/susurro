@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "susurro"
+version = "0.1.0"
+description = "Sussuro is an whisper based GUI audio-to-text application. It uses fast-whisper for inference and pyimgui for the GUI."
+authors = ["Luã Santilli <luasantilli@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+llvmlite = "^0.42.0"
+librosa = "^0.10.1"
+imgui = {extras = ["pygame"], version = "^2.0.0"}
+faster-whisper = "^1.0.1"
+numpy = "^1.26.4"
+transformers = {extras = ["torch"], version = "^4.38.2"}
+pyaudio = "^0.2.14"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

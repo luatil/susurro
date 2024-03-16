@@ -1,5 +1,5 @@
-from context import Context
-from gui import GUI
+from .context import Context
+from .gui import GUI
 
 
 def main() -> None:

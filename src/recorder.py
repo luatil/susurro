@@ -1,4 +1,4 @@
-from context import Context
+from .context import Context
 import pyaudio
 import numpy as np
 import librosa

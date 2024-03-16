@@ -6,3 +6,4 @@ imgui.ini
 /.vscode
 todo.txt
 /models
+*.lock

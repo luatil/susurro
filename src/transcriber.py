@@ -1,13 +1,12 @@
 from faster_whisper import WhisperModel
-import numpy as np
-from context import Context
+from .context import Context
 import threading
 
 
 class Transcriber:
     def __init__(self, ctx: Context, model_size="small") -> None:
         self.model = WhisperModel(
-            "models/whisper-small-pt-cv11-v7", device="cpu", compute_type="float32"
+            model_size, device="cpu", compute_type="float32"
         )
         self.ctx = ctx
         self.duration = 0.0

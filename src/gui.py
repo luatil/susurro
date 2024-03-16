@@ -1,11 +1,11 @@
 import pygame
 import imgui
 from imgui.integrations.pygame import PygameRenderer
-from context import Context
 import sys
 import threading
-from recorder import Recorder
-from transcriber import Transcriber, FileTranscriber
+from .recorder import Recorder
+from .transcriber import Transcriber, FileTranscriber
+from .context import Context
 import OpenGL.GL as gl
 
 
@@ -152,7 +152,7 @@ class RealTime:
         imgui.text("Transcription")
 
         # Select model box
-        items = ["models/whisper-small-pt-cv11-v7", "base", "small"]
+        items = ["base", "models/whisper-small-pt-cv11-v7", "small"]
         with imgui.begin_combo("Model", items[self.selected_model_index]) as combo:
             if combo.opened:
                 for i, item in enumerate(items):
